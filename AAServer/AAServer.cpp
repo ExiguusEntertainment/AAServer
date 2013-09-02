@@ -131,29 +131,37 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
         for (i = 0; i < SOCKETTABLESIZE; i++) {
             if (connBuffer[i].connected) {
                 printf("%d) ", i);
+                // Is this us in the list or someone else?
                 if ((ipconn[i].host == srchost)
                         && (ipconn[i].port == srcport)) {
+                    // We're sending a packet.  Good.  Don't send to ourself,
+                    // but update the timeout.
                     printf("SELF\n");
                     connBuffer[i].timeout = CONNECT_TIMEOUT;
                 } else {
-                    outPacket.address = ipconn[i];
+                    // This is someone else.  Is this where we need to send a packet?
+                    if ((ipconn[i].host == desthost) && (ipconn[i].port == destport)) {
+                        outPacket.address = ipconn[i];
 #if 1
-                    printf("IPX rpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i,
-                            CONVIP(outPacket.address.host),
-                            outPacket.address.port);
-                    for (j = 0; j < outPacket.len; j++) {
-                        if (j == sizeof(IPXHeader))
-                            printf("| ");
-                        printf("%02X ", outPacket.data[j]);
-                    }
-                    printf("]\n");
-                    fflush(stdout);
+                        printf("IPX rpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i,
+                                CONVIP(outPacket.address.host),
+                                outPacket.address.port);
+                        for (j = 0; j < outPacket.len; j++) {
+                            if (j == sizeof(IPXHeader))
+                                printf("| ");
+                            printf("%02X ", outPacket.data[j]);
+                        }
+                        printf("]\n");
+                        fflush(stdout);
 #endif
-                    result = SDLNet_UDP_Send(ipxServerSocket, -1, &outPacket);
-                    if (result == 0) {
-                        LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
+                        result = SDLNet_UDP_Send(ipxServerSocket, -1, &outPacket);
+                        if (result == 0) {
+                            LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
+                        }
+                        //LOG_MSG("IPXSERVER: Packet sent from %d.%d.%d.%d to %d.%d.%d.%d\n", CONVIP(srchost), CONVIP(desthost));
+                    } else {
+                        printf("NOT DEST\n");
                     }
-                    //LOG_MSG("IPXSERVER: Packet sent from %d.%d.%d.%d to %d.%d.%d.%d\n", CONVIP(srchost), CONVIP(desthost));
                 }
             }
         }
