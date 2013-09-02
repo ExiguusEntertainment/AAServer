@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ipx.h"
+#include <time.h>
 
+#define CONNECT_TIMEOUT     30 // seconds
 
 IPaddress ipxServerIp;  // IPAddress for server's listening port
 UDPsocket ipxServerSocket;  // Listening server socket
@@ -59,6 +61,7 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize) {
 	Bit16u srcport, destport;
 	Bit32u srchost, desthost;
 	Bit16u i;
+    Bit16u j;
 	Bits result;
 	UDPpacket outPacket;
 	outPacket.channel = -1;
@@ -74,48 +77,78 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize) {
 	srcport = tmpHeader->src.addr.byIP.port;
 	destport = tmpHeader->dest.addr.byIP.port;
 
-
+if (bufSize > 120)
+    bufSize = 120; // clip test
 #if 1
-	printf("IPX packet: (%d.%d.%d.%d:%d) [", CONVIP(srchost), srcport);
+	printf("IPX packet IN : (%d.%d.%d.%d:%d) (len:%d) [", CONVIP(srchost), srcport, bufSize);
 	for (i=0; i<bufSize; i++) {
 		if (i==sizeof(IPXHeader))
 			printf("| ");
 		printf("%02X ", buffer[i]);
 	}
 	printf("]\n");
+    fflush(stdout);
 #endif
 
 	if(desthost == 0xffffffff) {
 		// Broadcast
 		for(i=0;i<SOCKETTABLESIZE;i++) {
-			if(connBuffer[i].connected && ((ipconn[i].host != srchost)||(ipconn[i].port!=srcport))) {
-				outPacket.address = ipconn[i];
-				result = SDLNet_UDP_Send(ipxServerSocket,-1,&outPacket);
-				if(result == 0) {
-					LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
-					continue;
-				}
-				//LOG_MSG("IPXSERVER: Packet of %d bytes sent from %d.%d.%d.%d to %d.%d.%d.%d (BROADCAST) (%x CRC)\n", bufSize, CONVIP(srchost), CONVIP(ipconn[i].host), packetCRC(&buffer[30], bufSize-30));
-			}
+            if (connBuffer[i].connected) {
+                printf("%d) ", i);
+			    if ((ipconn[i].host == srchost) && (ipconn[i].port == srcport)) {
+                    printf("SELF\n");
+                    connBuffer[i].timeout = CONNECT_TIMEOUT;
+                } else {
+				    outPacket.address = ipconn[i];
+#if 1
+printf("IPX bpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i, CONVIP(outPacket.address.host), outPacket.address.port);
+    for (j=0; j<outPacket.len; j++) {
+		if (j==sizeof(IPXHeader))
+			printf("| ");
+        printf("%02X ", outPacket.data[j]);
+	}
+	printf("]\n");
+    fflush(stdout);
+#endif
+				    result = SDLNet_UDP_Send(ipxServerSocket,-1,&outPacket);
+				    if(result == 0) {
+					    LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
+				    }
+				    //LOG_MSG("IPXSERVER: Packet of %d bytes sent from %d.%d.%d.%d to %d.%d.%d.%d (BROADCAST) (%x CRC)\n", bufSize, CONVIP(srchost), CONVIP(ipconn[i].host), packetCRC(&buffer[30], bufSize-30));
+                }
+            }
 		}
+        printf("End i %d\n\n", i);
 	} else {
 		// Specific address
 		for(i=0;i<SOCKETTABLESIZE;i++) {
-			if((connBuffer[i].connected) && (ipconn[i].host == desthost) && (ipconn[i].port == destport)) {
-				outPacket.address = ipconn[i];
-				result = SDLNet_UDP_Send(ipxServerSocket,-1,&outPacket);
-				if(result == 0) {
-					LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
-					continue;
-				}
-				//LOG_MSG("IPXSERVER: Packet sent from %d.%d.%d.%d to %d.%d.%d.%d\n", CONVIP(srchost), CONVIP(desthost));
-			}
-		}
+            if (connBuffer[i].connected) {
+                printf("%d) ", i);
+			    if ((ipconn[i].host == srchost) && (ipconn[i].port == srcport)) {
+                    printf("SELF\n");
+                    connBuffer[i].timeout = CONNECT_TIMEOUT;
+                } else {
+				    outPacket.address = ipconn[i];
+#if 1
+printf("IPX rpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i, CONVIP(outPacket.address.host), outPacket.address.port);
+    for (j=0; j<outPacket.len; j++) {
+		if (j==sizeof(IPXHeader))
+			printf("| ");
+        printf("%02X ", outPacket.data[j]);
 	}
-
-
-
-
+	printf("]\n");
+    fflush(stdout);
+#endif
+				    result = SDLNet_UDP_Send(ipxServerSocket,-1,&outPacket);
+				    if(result == 0) {
+					    LOG_MSG("IPXSERVER: %s\n", SDLNet_GetError());
+				    }
+				    //LOG_MSG("IPXSERVER: Packet sent from %d.%d.%d.%d to %d.%d.%d.%d\n", CONVIP(srchost), CONVIP(desthost));
+			    }
+            }
+		}
+        printf("End i %d\n\n", i);
+	}
 }
 
 bool IPX_isConnectedToServer(Bits tableNum, IPaddress ** ptrAddr) {
@@ -185,7 +218,9 @@ static void IPX_ServerLoop() {
 
 						connBuffer[i].connected = true;
 						host = ipconn[i].host;
-						LOG_MSG("IPXSERVER: Connect from %d.%d.%d.%d:%d\n", CONVIP(host), ipconn[i].port);
+						LOG_MSG("IPXSERVER: Connect from %d.%d.%d.%d:%d [%d]\n", CONVIP(host), ipconn[i].port, i);
+                        fflush(stdout);
+                        connBuffer[i].timeout = CONNECT_TIMEOUT;
 						ackClient(inPacket.address);
 						return;
 					} else {
@@ -200,11 +235,11 @@ static void IPX_ServerLoop() {
 					}
 					
 				}
-			}
-		}
-
-		// IPX packet is complete.  Now interpret IPX header and send to respective IP address
-		sendIPXPacket((Bit8u *)inPacket.data, inPacket.len);
+            }
+		} else {
+		    // IPX packet is complete.  Now interpret IPX header and send to respective IP address
+		    sendIPXPacket((Bit8u *)inPacket.data, inPacket.len);
+        }
 	}
 }
 
@@ -213,8 +248,28 @@ void IPX_StopServer() {
 	SDLNet_UDP_Close(ipxServerSocket);
 }
 
+void UpdateConnections(void)
+{
+    unsigned int i;
+
+	for(i=0;i<SOCKETTABLESIZE;i++) {
+        if(connBuffer[i].connected) {
+            connBuffer[i].timeout--;
+            if (connBuffer[i].timeout == 0) {
+	            Bit16u srcport = ipconn[i].port;
+	            Bit32u srchost = ipconn[i].host;
+                printf("Timeout connection %d.%d.%d.%d:%d -- Closed!\n",  CONVIP(srchost), srcport);
+                connBuffer[i].connected = 0;
+                fflush(stdout);
+            }
+        }
+    }
+}
+
 bool IPX_StartServer(Bit16u portnum) {
 	Bit16u i;
+    clock_t t;
+    clock_t lastCheck;
 
 	if(!SDLNet_ResolveHost(&ipxServerIp, NULL, portnum)) {
 		//serverSocketSet = SDLNet_AllocSocketSet(SOCKETTABLESIZE);
@@ -230,8 +285,15 @@ bool IPX_StartServer(Bit16u portnum) {
 
         printf("Server started on port %d\n", portnum);
 		//TIMER_AddTickHandler(&IPX_ServerLoop);
+        lastCheck = clock();
         while (1) {
             IPX_ServerLoop();
+            t = clock();
+            if ((t-lastCheck) >= CLOCKS_PER_SEC) {
+                lastCheck += CLOCKS_PER_SEC;
+                // 1 second has gone by
+                UpdateConnections();
+            }
             Sleep(1);
         }
 
@@ -247,6 +309,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     printf("Amulets & Armor IPX Server v1.00\n");
     printf("--------------------------------\n");
+    fflush(stdout);
 
     if(SDL_Init(0)==-1) {
         printf("SDL_Init: %s\n", SDL_GetError());

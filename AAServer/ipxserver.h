@@ -11,6 +11,7 @@ struct packetBuffer {
 	bool inPacket;      // In packet reception flag
 	bool connected;		// Connected flag
 	bool waitsize;
+    unsigned int timeout;
 };
 
 #define SOCKETTABLESIZE 256
