@@ -33,12 +33,39 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DEBUG.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DITALK.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GENERAL.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GROUP.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OPTIONS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PACKET.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CMDQUEUE.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SYNCPACK.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AAServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PACKETPR.C">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

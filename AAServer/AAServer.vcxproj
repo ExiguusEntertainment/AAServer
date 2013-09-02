@@ -54,6 +54,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -83,14 +84,23 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CMDQUEUE.H" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="DEBUG.H" />
+    <ClInclude Include="DITALK.H" />
+    <ClInclude Include="GENERAL.H" />
+    <ClInclude Include="GROUP.H" />
     <ClInclude Include="ipx.h" />
     <ClInclude Include="ipxserver.h" />
+    <ClInclude Include="OPTIONS.H" />
+    <ClInclude Include="PACKET.H" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SYNCPACK.H" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AAServer.cpp" />
+    <ClCompile Include="PACKETPR.C" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

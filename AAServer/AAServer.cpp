@@ -9,6 +9,9 @@
 #include <string.h>
 #include "ipx.h"
 #include <time.h>
+extern "C" {
+void PacketPrint(void *aData, unsigned int aSize);
+}
 
 #define CONNECT_TIMEOUT     30 // seconds
 IPaddress ipxServerIp;  // IPAddress for server's listening port
@@ -82,23 +85,24 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
 
     if (bufSize > 120)
         bufSize = 120; // clip test
-#if 1
+#if 0
     printf("IPX packet IN : (%d.%d.%d.%d:%d) (len:%d) [", CONVIP(srchost),
             srcport, bufSize);
     for (i = 0; i < bufSize; i++) {
-        if (i == sizeof(IPXHeader))
+        if (i == sizeof(IPXHeader)+4)
             printf("| ");
         printf("%02X ", buffer[i]);
     }
     printf("]\n");
     fflush(stdout);
 #endif
+    PacketPrint(buffer+sizeof(IPXHeader)+4, bufSize-(sizeof(IPXHeader)+4));
 
     if (desthost == 0xffffffff) {
         // Broadcast
         for (i = 0; i < SOCKETTABLESIZE; i++) {
             if (connBuffer[i].connected) {
-                printf("%d) ", i);
+                printf("    %d) ", i);
                 if ((ipconn[i].host == srchost)
                         && (ipconn[i].port == srcport)) {
                     printf("SELF\n");
@@ -106,7 +110,7 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                 } else {
                     outPacket.address = ipconn[i];
 #if 1
-                    printf("IPX bpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i,
+                    printf("IPX bpacket OUT: (%d.%d.%d.%d:%d) [", i,
                             CONVIP(outPacket.address.host),
                             outPacket.address.port);
                     for (j = 0; j < outPacket.len; j++) {
@@ -125,25 +129,26 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                 }
             }
         }
-        printf("End i %d\n\n", i);
+//        printf("End i %d\n\n", i);
+    fflush(stdout);
     } else {
         // Specific address
         for (i = 0; i < SOCKETTABLESIZE; i++) {
             if (connBuffer[i].connected) {
-                printf("%d) ", i);
+                //printf("    %d) ", i);
                 // Is this us in the list or someone else?
                 if ((ipconn[i].host == srchost)
                         && (ipconn[i].port == srcport)) {
                     // We're sending a packet.  Good.  Don't send to ourself,
                     // but update the timeout.
-                    printf("SELF\n");
+                    //printf("SELF\n");
                     connBuffer[i].timeout = CONNECT_TIMEOUT;
                 } else {
                     // This is someone else.  Is this where we need to send a packet?
                     if ((ipconn[i].host == desthost) && (ipconn[i].port == destport)) {
                         outPacket.address = ipconn[i];
 #if 1
-                        printf("IPX rpacket OUT [%d]: (%d.%d.%d.%d:%d) [", i,
+                        printf("    %d) IPX rpacket OUT: (%d.%d.%d.%d:%d) [", i,
                                 CONVIP(outPacket.address.host),
                                 outPacket.address.port);
                         for (j = 0; j < outPacket.len; j++) {
@@ -160,12 +165,13 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                         }
                         //LOG_MSG("IPXSERVER: Packet sent from %d.%d.%d.%d to %d.%d.%d.%d\n", CONVIP(srchost), CONVIP(desthost));
                     } else {
-                        printf("NOT DEST\n");
+                        //printf("NOT DEST\n");
                     }
                 }
             }
         }
-        printf("End i %d\n\n", i);
+//        printf("End i %d\n\n", i);
+    fflush(stdout);
     }
 }
 
