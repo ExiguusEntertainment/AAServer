@@ -69,7 +69,7 @@ const char *PacketSenderName(T_directTalkUniqueAddress addr)
 {
     static char sender[20];
 
-    sprintf(sender, "%02X%02X%02X%02X%02X%02X", addr.address[0],
+    sprintf(sender, "@%02X%02X%02X%02X%02X%02X", addr.address[0],
             addr.address[1], addr.address[2], addr.address[3], addr.address[4],
             addr.address[5]);
 
@@ -142,7 +142,7 @@ void PacketFPrint(FILE *fp, void *aData, unsigned int aSize)
 	    // special csyncpacket
 		fprintf(fp, "s");
 	}
-	fprintf(fp, "#%d: %s:%s", p_header->id, PacketSenderName(p_header->sender), PacketName(p_packet->data[0]));
+	fprintf(fp, "#%d %s -> %s", p_header->id, PacketSenderName(p_header->sender), PacketName(p_packet->data[0]));
 	switch (p_packet->data[0]) {
 		case PACKET_COMMAND_ACK:
 			{

@@ -13,7 +13,7 @@ extern "C" {
 void PacketPrint(void *aData, unsigned int aSize);
 }
 
-#define CONNECT_TIMEOUT     30 // seconds
+#define CONNECT_TIMEOUT     900 // seconds
 IPaddress ipxServerIp;  // IPAddress for server's listening port
 UDPsocket ipxServerSocket;  // Listening server socket
 
@@ -110,7 +110,7 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                 } else {
                     outPacket.address = ipconn[i];
 #if 1
-                    printf("IPX bpacket OUT: (%d.%d.%d.%d:%d) [", i,
+                    printf("IPX bpacket OUT: (%d.%d.%d.%d:%d) [", 
                             CONVIP(outPacket.address.host),
                             outPacket.address.port);
                     for (j = 0; j < outPacket.len; j++) {
