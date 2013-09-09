@@ -17,6 +17,8 @@ void PacketPrint(void *aData, unsigned int aSize);
 IPaddress ipxServerIp;  // IPAddress for server's listening port
 UDPsocket ipxServerSocket;  // Listening server socket
 
+#define DEBUG_PACKETS 0
+
 packetBuffer connBuffer[SOCKETTABLESIZE];
 
 Bit8u inBuffer[IPXBUFFERSIZE];
@@ -67,7 +69,6 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
     Bit16u srcport, destport;
     Bit32u srchost, desthost;
     Bit16u i;
-    Bit16u j;
     Bits result;
     UDPpacket outPacket;
     outPacket.channel = -1;
@@ -96,20 +97,26 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
     printf("]\n");
     fflush(stdout);
 #endif
+#if DEBUG_PACKETS
     PacketPrint(buffer+sizeof(IPXHeader)+4, bufSize-(sizeof(IPXHeader)+4));
+#endif
 
     if (desthost == 0xffffffff) {
         // Broadcast
         for (i = 0; i < SOCKETTABLESIZE; i++) {
             if (connBuffer[i].connected) {
+#if DEBUG_PACKETS
                 printf("    %d) ", i);
+#endif
                 if ((ipconn[i].host == srchost)
                         && (ipconn[i].port == srcport)) {
+#if DEBUG_PACKETS
                     printf("SELF\n");
+#endif
                     connBuffer[i].timeout = CONNECT_TIMEOUT;
                 } else {
                     outPacket.address = ipconn[i];
-#if 1
+#if DEBUG_PACKETS
                     printf("IPX bpacket OUT: (%d.%d.%d.%d:%d) [", 
                             CONVIP(outPacket.address.host),
                             outPacket.address.port);
@@ -129,7 +136,6 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                 }
             }
         }
-//        printf("End i %d\n\n", i);
     fflush(stdout);
     } else {
         // Specific address
@@ -147,7 +153,7 @@ static void sendIPXPacket(Bit8u *buffer, Bit16s bufSize)
                     // This is someone else.  Is this where we need to send a packet?
                     if ((ipconn[i].host == desthost) && (ipconn[i].port == destport)) {
                         outPacket.address = ipconn[i];
-#if 1
+#if DEBUG_PACKETS
                         printf("    %d) IPX rpacket OUT: (%d.%d.%d.%d:%d) [", i,
                                 CONVIP(outPacket.address.host),
                                 outPacket.address.port);
